@@ -20,6 +20,15 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'status' => 'active',
+        ]);
+
+        $this->call([
+            CategorySeeder::class,
+            BookSeeder::class,
+            BookCopySeeder::class,
+            LoanSeeder::class,
+            FavoriteSeeder::class,
         ]);
     }
 }
