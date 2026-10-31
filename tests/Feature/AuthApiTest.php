@@ -10,9 +10,9 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_register_and_receive_token(): void
+    public function test_user_can_register_via_v1_endpoint(): void
     {
-        $response = $this->postJson('/api/register', [
+        $response = $this->postJson('/api/v1/register', [
             'name' => 'Ayuthaya',
             'email' => 'ayuthaya@example.com',
             'password' => 'password123',
@@ -40,7 +40,7 @@ class AuthApiTest extends TestCase
             'email' => 'existing@example.com',
         ]);
 
-        $response = $this->postJson('/api/register', [
+        $response = $this->postJson('/api/v1/register', [
             'name' => 'Duplicate User',
             'email' => 'existing@example.com',
             'password' => 'password123',
@@ -51,15 +51,15 @@ class AuthApiTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
-    public function test_user_can_login_with_valid_credentials(): void
+    public function test_user_can_login_via_v1_endpoint(): void
     {
-        $user = User::factory()->create([
+        User::factory()->create([
             'email' => 'student@example.com',
             'password' => 'secret1234',
             'status' => 'active',
         ]);
 
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/v1/login', [
             'email' => 'student@example.com',
             'password' => 'secret1234',
         ]);
@@ -80,7 +80,7 @@ class AuthApiTest extends TestCase
             'password' => 'secret1234',
         ]);
 
-        $response = $this->postJson('/api/login', [
+        $response = $this->postJson('/api/v1/login', [
             'email' => 'student@example.com',
             'password' => 'wrongpassword',
         ]);
@@ -91,7 +91,7 @@ class AuthApiTest extends TestCase
             ]);
     }
 
-    public function test_authenticated_user_can_view_own_profile(): void
+    public function test_authenticated_user_can_view_profile_via_v1_endpoint(): void
     {
         $user = User::factory()->create([
             'name' => 'Ayuthaya RUPP',
@@ -101,7 +101,7 @@ class AuthApiTest extends TestCase
         $token = $user->createToken('test_token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/me');
+            ->getJson('/api/v1/me');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -113,20 +113,20 @@ class AuthApiTest extends TestCase
             ]);
     }
 
-    public function test_unauthenticated_request_to_profile_is_rejected(): void
+    public function test_unauthenticated_request_to_v1_profile_is_rejected(): void
     {
-        $response = $this->getJson('/api/me');
+        $response = $this->getJson('/api/v1/me');
 
         $response->assertStatus(401);
     }
 
-    public function test_user_can_logout_and_revoke_token(): void
+    public function test_user_can_logout_via_v1_endpoint(): void
     {
         $user = User::factory()->create();
         $token = $user->createToken('logout_test_token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->postJson('/api/logout');
+            ->postJson('/api/v1/logout');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -134,5 +134,22 @@ class AuthApiTest extends TestCase
             ]);
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_legacy_routes_still_accessible_for_backward_compatibility(): void
+    {
+        User::factory()->create([
+            'email' => 'legacy@example.com',
+            'password' => 'secret1234',
+            'status' => 'active',
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'legacy@example.com',
+            'password' => 'secret1234',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['token']);
     }
 }
