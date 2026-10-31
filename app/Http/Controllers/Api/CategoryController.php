@@ -3,52 +3,87 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 
 class CategoryController extends Controller
 {
-    public function index()
+    /**
+     * Display a listing of all categories.
+     */
+    public function index(): JsonResponse
     {
-        return Category::all();
+        return response()->json(Category::all());
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created category.
+     */
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
-        ]);
-
-        return response()->json(Category::create($data), 201);
+        return response()->json(Category::create($request->validated()), 201);
     }
 
-    public function show(Category $category)
+    /**
+     * Display the specified category by ID.
+     */
+    public function show(int $id): JsonResponse
     {
-        return $category;
+        $category = Category::find($id);
+
+        if (! $category) {
+            return response()->json([
+                'message' => 'Category not found',
+            ], 404);
+        }
+
+        return response()->json($category);
     }
 
-    public function update(Request $request, Category $category)
+    /**
+     * Update the specified category by ID.
+     */
+    public function update(UpdateCategoryRequest $request, int $id): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255',
-                Rule::unique('categories', 'name')->ignore($category->id)],
-        ]);
+        $category = Category::find($id);
 
-        $category->update($data);
-        return $category;
+        if (! $category) {
+            return response()->json([
+                'message' => 'Category not found',
+            ], 404);
+        }
+
+        $category->update($request->validated());
+
+        return response()->json($category);
     }
 
-    public function destroy(Category $category)
+    /**
+     * Remove the specified category by ID.
+     */
+    public function destroy(int $id): JsonResponse|Response
     {
+        $category = Category::find($id);
+
+        if (! $category) {
+            return response()->json([
+                'message' => 'Category not found',
+            ], 404);
+        }
+
         // Books still point to this category, so the database would reject the delete
         if ($category->books()->exists()) {
             return response()->json(
-                ['message' => 'Cannot delete a category that still has books.'], 409
+                ['message' => 'Cannot delete a category that still has books.'],
+                409
             );
         }
 
         $category->delete();
+
         return response()->noContent();
     }
 }

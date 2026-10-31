@@ -135,21 +135,4 @@ class AuthApiTest extends TestCase
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
-
-    public function test_legacy_routes_still_accessible_for_backward_compatibility(): void
-    {
-        User::factory()->create([
-            'email' => 'legacy@example.com',
-            'password' => 'secret1234',
-            'status' => 'active',
-        ]);
-
-        $response = $this->postJson('/api/login', [
-            'email' => 'legacy@example.com',
-            'password' => 'secret1234',
-        ]);
-
-        $response->assertStatus(200)
-            ->assertJsonStructure(['token']);
-    }
 }

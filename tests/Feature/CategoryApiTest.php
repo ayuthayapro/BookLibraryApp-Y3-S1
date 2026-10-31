@@ -78,7 +78,7 @@ class CategoryApiTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // GET /api/v1/categories/{category}  (show)
+    // GET /api/v1/categories/{id}  (show)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_view_a_category(): void
@@ -97,11 +97,12 @@ class CategoryApiTest extends TestCase
         $response = $this->withHeaders($this->authHeader())
             ->getJson('/api/v1/categories/9999');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Category not found']);
     }
 
     // -----------------------------------------------------------------------
-    // PUT /api/v1/categories/{category}  (update)
+    // PUT /api/v1/categories/{id}  (update)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_update_a_category(): void
@@ -128,8 +129,17 @@ class CategoryApiTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_updating_a_nonexistent_category_returns_404(): void
+    {
+        $response = $this->withHeaders($this->authHeader())
+            ->putJson('/api/v1/categories/9999', ['name' => 'Non Existent']);
+
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Category not found']);
+    }
+
     // -----------------------------------------------------------------------
-    // DELETE /api/v1/categories/{category}  (destroy)
+    // DELETE /api/v1/categories/{id}  (destroy)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_delete_an_empty_category(): void
@@ -141,6 +151,15 @@ class CategoryApiTest extends TestCase
 
         $response->assertStatus(204);
         $this->assertDatabaseMissing('categories', ['id' => $category->id]);
+    }
+
+    public function test_deleting_a_nonexistent_category_returns_404(): void
+    {
+        $response = $this->withHeaders($this->authHeader())
+            ->deleteJson('/api/v1/categories/9999');
+
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Category not found']);
     }
 
     public function test_cannot_delete_a_category_that_has_books(): void

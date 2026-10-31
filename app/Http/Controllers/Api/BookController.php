@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Book\StoreBookRequest;
+use App\Http\Requests\Book\UpdateBookRequest;
 use App\Models\Book;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Response;
 
 class BookController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Display a listing of books with search and filter.
+     */
+    public function index(Request $request): JsonResponse
     {
         $query = Book::with('category'); // eager load to avoid extra queries
 
@@ -18,54 +24,71 @@ class BookController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+            $query->where('title', 'like', '%'.$request->search.'%');
         }
 
-        return $query->paginate(10);
+        return response()->json($query->paginate(10));
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created book.
+     */
+    public function store(StoreBookRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'google_id'   => 'nullable|string|unique:books,google_id',
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'authors'     => 'required|string|max:255',
-            'isbn'        => 'nullable|string|max:255|unique:books,isbn',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-
-        $book = Book::create($data);
+        $book = Book::create($request->validated());
 
         return response()->json($book->load('category'), 201);
     }
 
-    public function show(Book $book)
+    /**
+     * Display the specified book by ID.
+     */
+    public function show(int $id): JsonResponse
     {
-        return $book->load('category');
+        $book = Book::with('category')->find($id);
+
+        if (! $book) {
+            return response()->json([
+                'message' => 'Book not found',
+            ], 404);
+        }
+
+        return response()->json($book);
     }
 
-    public function update(Request $request, Book $book)
+    /**
+     * Update the specified book by ID.
+     */
+    public function update(UpdateBookRequest $request, int $id): JsonResponse
     {
-        $data = $request->validate([
-            'google_id'   => ['nullable', 'string', Rule::unique('books', 'google_id')->ignore($book->id)],
-            'title'       => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'authors'     => 'sometimes|required|string|max:255',
-            'isbn'        => ['nullable', 'string', 'max:255', Rule::unique('books', 'isbn')->ignore($book->id)],
-            'category_id' => 'sometimes|required|exists:categories,id',
-        ]);
+        $book = Book::find($id);
 
-        $book->update($data); 
+        if (! $book) {
+            return response()->json([
+                'message' => 'Book not found',
+            ], 404);
+        }
 
-        return $book->load('category');
+        $book->update($request->validated());
+
+        return response()->json($book->load('category'));
     }
 
-    public function destroy($id)
+    /**
+     * Remove the specified book by ID.
+     */
+    public function destroy(int $id): JsonResponse|Response
     {
-    Book::findOrFail($id)->delete();
+        $book = Book::find($id);
 
-    return response()->noContent();
+        if (! $book) {
+            return response()->json([
+                'message' => 'Book not found',
+            ], 404);
+        }
+
+        $book->delete();
+
+        return response()->noContent();
     }
-
 }

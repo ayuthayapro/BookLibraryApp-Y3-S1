@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RoleName;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,13 +16,9 @@ class AuthController extends Controller
     /**
      * Register a new user and issue a Sanctum token.
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -28,11 +27,14 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
+        $roleToAssign = $validated['role'] ?? RoleName::Member->value;
+        $user->assignRole($roleToAssign);
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
-            'user' => $user,
+            'user' => $user->load('roles', 'permissions'),
             'token' => $token,
             'token_type' => 'Bearer',
         ], 201);
@@ -41,12 +43,9 @@ class AuthController extends Controller
     /**
      * Authenticate user credentials and issue a Sanctum token.
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $user = User::where('email', $validated['email'])->first();
 
@@ -62,11 +61,12 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $deviceName = $validated['device_name'] ?? 'auth_token';
+        $token = $user->createToken($deviceName)->plainTextToken;
 
         return response()->json([
             'message' => 'Logged in successfully',
-            'user' => $user,
+            'user' => $user->load('roles', 'permissions'),
             'token' => $token,
             'token_type' => 'Bearer',
         ]);
@@ -78,7 +78,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user(),
+            'user' => $request->user()->load('roles', 'permissions'),
         ]);
     }
 

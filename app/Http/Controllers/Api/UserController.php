@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -23,7 +23,7 @@ class UserController extends Controller
             $like = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $query->where(function ($q) use ($search, $like) {
                 $q->where('name', $like, "%{$search}%")
-                  ->orWhere('email', $like, "%{$search}%");
+                    ->orWhere('email', $like, "%{$search}%");
             });
         }
 
@@ -34,6 +34,7 @@ class UserController extends Controller
 
         // Order by latest created and paginate
         $users = $query->withCount('loans')
+            ->with(['roles', 'permissions'])
             ->orderBy('id', 'asc')
             ->paginate($request->query('per_page', 10));
 
@@ -45,7 +46,7 @@ class UserController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $user = User::with(['loans.bookCopy.book', 'favorites.book'])
+        $user = User::with(['loans.bookCopy.book', 'favorites.book', 'roles', 'permissions'])
             ->find($id);
 
         if (! $user) {
@@ -62,7 +63,7 @@ class UserController extends Controller
     /**
      * Update the specified user in storage.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
         $user = User::find($id);
 
@@ -72,28 +73,24 @@ class UserController extends Controller
             ], 404);
         }
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => [
-                'sometimes',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
-            'status' => ['sometimes', 'string', 'in:active,inactive,banned'],
-            'password' => ['sometimes', 'string', 'min:8'],
-        ]);
+        $validated = $request->validated();
+
+        if (isset($validated['roles'])) {
+            $user->syncRoles($validated['roles']);
+            unset($validated['roles']);
+        }
 
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         }
 
-        $user->update($validated);
+        if (! empty($validated)) {
+            $user->update($validated);
+        }
 
         return response()->json([
             'message' => 'User updated successfully',
-            'user' => $user->fresh(),
+            'user' => $user->fresh(['roles', 'permissions']),
         ]);
     }
 

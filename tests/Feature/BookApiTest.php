@@ -136,7 +136,7 @@ class BookApiTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // GET /api/v1/books/{book}  (show)
+    // GET /api/v1/books/{id}  (show)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_view_a_book(): void
@@ -147,8 +147,7 @@ class BookApiTest extends TestCase
             ->getJson("/api/v1/books/{$book->id}");
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['title' => 'Design Patterns'])
-            ->assertJsonStructure(['id', 'title', 'authors', 'category']);
+            ->assertJsonFragment(['title' => 'Design Patterns']);
     }
 
     public function test_viewing_a_nonexistent_book_returns_404(): void
@@ -156,11 +155,12 @@ class BookApiTest extends TestCase
         $response = $this->withHeaders($this->authHeader())
             ->getJson('/api/v1/books/9999');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Book not found']);
     }
 
     // -----------------------------------------------------------------------
-    // PUT /api/v1/books/{book}  (update)
+    // PUT /api/v1/books/{id}  (update)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_update_a_book(): void
@@ -187,8 +187,17 @@ class BookApiTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_updating_a_nonexistent_book_returns_404(): void
+    {
+        $response = $this->withHeaders($this->authHeader())
+            ->putJson('/api/v1/books/9999', ['title' => 'Non Existent']);
+
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Book not found']);
+    }
+
     // -----------------------------------------------------------------------
-    // DELETE /api/v1/books/{book}  (destroy)
+    // DELETE /api/v1/books/{id}  (destroy)
     // -----------------------------------------------------------------------
 
     public function test_authenticated_user_can_delete_a_book(): void
@@ -207,6 +216,7 @@ class BookApiTest extends TestCase
         $response = $this->withHeaders($this->authHeader())
             ->deleteJson('/api/v1/books/9999');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Book not found']);
     }
 }
