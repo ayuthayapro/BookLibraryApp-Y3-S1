@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-#[Fillable(['category_id', 'google_book_id', 'title', 'description', 'authors', 'isbn'])]
+#[Fillable(['category_id', 'google_book_id', 'google_id', 'title', 'description', 'desciption', 'authors', 'isbn'])]
 class Book extends Model
 {
     /** @use HasFactory<BookFactory> */
