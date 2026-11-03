@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\BookCopyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,15 @@ Route::prefix('v1')->group(function () {
         Route::put('/books/{id}', [BookController::class, 'update']);
         Route::patch('/books/{id}', [BookController::class, 'update']);
         Route::delete('/books/{id}', [BookController::class, 'destroy']);
+
+        // Book Copy CRUD (by ID)
+        Route::get('/book-copies', [BookCopyController::class, 'index']);
+        Route::post('/book-copies', [BookCopyController::class, 'store']);
+        Route::get('/book-copies/{id}', [BookCopyController::class, 'show']);
+        Route::put('/book-copies/{id}', [BookCopyController::class, 'update']);
+        Route::patch('/book-copies/{id}', [BookCopyController::class, 'update']);
+        Route::delete('/book-copies/{id}', [BookCopyController::class, 'destroy']);
+        Route::get('book-copies/barcode/{barcode}', [BookCopyController::class, 'showByBarcode']);
 
         // Loan & Circulation APIs (Borrowing, Returning, Overdue)
         Route::get('/loans', [LoanController::class, 'index']);
