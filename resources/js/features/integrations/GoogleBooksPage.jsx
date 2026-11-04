@@ -18,6 +18,7 @@ import Modal from '../../components/common/Modal';
 import { integrationsService } from '../../services/integrationsService';
 import { categoriesService } from '../../services/categoriesService';
 import { useToast } from '../../app/ToastContext';
+import { toSafeArray } from '../../lib/utils';
 
 export default function GoogleBooksPage({ onImportSuccess }) {
     const { showToast } = useToast();
@@ -42,7 +43,7 @@ export default function GoogleBooksPage({ onImportSuccess }) {
     // Load categories for assignment
     useEffect(() => {
         categoriesService.getCategories().then((res) => {
-            setCategories(res.data || res || []);
+            setCategories(toSafeArray(res));
         }).catch(() => {});
     }, []);
 
@@ -55,7 +56,7 @@ export default function GoogleBooksPage({ onImportSuccess }) {
         try {
             setLoading(true);
             const res = await integrationsService.searchGoogleBooks(q, 12);
-            setResults(res.items || res.data?.items || []);
+            setResults(toSafeArray(res, 'items'));
             setTotalItems(res.total_items || res.data?.total_items || 0);
         } catch (err) {
             showToast(err.message || 'Google Books search failed', 'error');
@@ -144,7 +145,7 @@ export default function GoogleBooksPage({ onImportSuccess }) {
                                 onClick={() => {
                                     setQuery(chip);
                                     integrationsService.searchGoogleBooks(chip, 12).then((res) => {
-                                        setResults(res.items || res.data?.items || []);
+                                        setResults(toSafeArray(res, 'items'));
                                         setTotalItems(res.total_items || res.data?.total_items || 0);
                                     }).catch(() => {});
                                 }}

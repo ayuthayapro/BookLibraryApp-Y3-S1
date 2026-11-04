@@ -8,6 +8,7 @@ import Modal from '../../components/common/Modal';
 import Table from '../../components/common/Table';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Badge from '../../components/common/Badge';
+import { toSafeArray } from '../../lib/utils';
 
 export default function CategoriesPage() {
     const { showToast } = useToast();
@@ -28,9 +29,7 @@ export default function CategoriesPage() {
     const loadCategories = async () => {
         setLoading(true);
         const res = await categoriesService.getCategories();
-        if (res.success) {
-            setCategories(res.data?.data || res.data || []);
-        }
+        setCategories(toSafeArray(res));
         setLoading(false);
     };
 

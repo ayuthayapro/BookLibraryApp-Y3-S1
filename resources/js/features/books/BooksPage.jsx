@@ -19,6 +19,7 @@ import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import Badge from '../../components/common/Badge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { toSafeArray } from '../../lib/utils';
 
 export default function BooksPage({ onManageCopies, onAiSummarize }) {
     const { showToast } = useToast();
@@ -48,9 +49,7 @@ export default function BooksPage({ onManageCopies, onAiSummarize }) {
 
     const loadCategories = async () => {
         const res = await categoriesService.getCategories();
-        if (res.success) {
-            setCategories(res.data?.data || res.data || []);
-        }
+        setCategories(toSafeArray(res));
     };
 
     const loadBooks = async () => {
@@ -62,10 +61,8 @@ export default function BooksPage({ onManageCopies, onAiSummarize }) {
             per_page: 9,
         });
 
-        if (res.success) {
-            setBooks(res.data?.data || []);
-            setTotalPages(res.data?.last_page || 1);
-        }
+        setBooks(toSafeArray(res));
+        setTotalPages(res.data?.last_page || 1);
         setLoading(false);
     };
 

@@ -23,7 +23,7 @@ import { loansService } from '../../services/loansService';
 import { copiesService } from '../../services/copiesService';
 import { membersService } from '../../services/membersService';
 import { useToast } from '../../app/ToastContext';
-import { formatDate } from '../../lib/utils';
+import { formatDate, toSafeArray, extractPagination } from '../../lib/utils';
 
 export default function BorrowingPage({ isOverdueOnly = false, initialCopy = null }) {
     const { showToast } = useToast();
@@ -93,12 +93,8 @@ export default function BorrowingPage({ isOverdueOnly = false, initialCopy = nul
                 res = await loansService.getLoans(params);
             }
 
-            setLoans(res.data || []);
-            setPagination({
-                current_page: res.current_page || 1,
-                last_page: res.last_page || 1,
-                total: res.total || 0,
-            });
+            setLoans(toSafeArray(res));
+            setPagination(extractPagination(res));
         } catch (err) {
             showToast(err.message || 'Failed to fetch loans', 'error');
         } finally {
@@ -113,8 +109,8 @@ export default function BorrowingPage({ isOverdueOnly = false, initialCopy = nul
                 copiesService.getCopies({ status: 'available', per_page: 50 }),
                 membersService.getMembers({ status: 'active', per_page: 100 }),
             ]);
-            setAvailableCopies(copiesRes.data || []);
-            setMembersList(membersRes.data || []);
+            setAvailableCopies(toSafeArray(copiesRes));
+            setMembersList(toSafeArray(membersRes));
         } catch (err) {
             console.error('Failed to load lookup data', err);
         }

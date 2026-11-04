@@ -21,6 +21,7 @@ import { rolesService } from '../../services/rolesService';
 import { membersService } from '../../services/membersService';
 import { useAuth } from '../../app/AuthContext';
 import { useToast } from '../../app/ToastContext';
+import { toSafeArray } from '../../lib/utils';
 
 export default function AdministratorsPage() {
     const { user: currentUser, isAdmin } = useAuth();
@@ -58,9 +59,9 @@ export default function AdministratorsPage() {
                 membersService.getMembers({ per_page: 100 }),
             ]);
 
-            const loadedRoles = rolesRes.roles || rolesRes.data || rolesRes || [];
-            const loadedPerms = permsRes.permissions || permsRes.data || permsRes || [];
-            const loadedMembers = membersRes.data || membersRes || [];
+            const loadedRoles = toSafeArray(rolesRes, 'roles');
+            const loadedPerms = toSafeArray(permsRes, 'permissions');
+            const loadedMembers = toSafeArray(membersRes);
 
             setRoles(loadedRoles);
             setPermissions(loadedPerms);
@@ -193,7 +194,7 @@ export default function AdministratorsPage() {
                     Configured System Roles
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {roles.map((r) => (
+                    {(Array.isArray(roles) ? roles : []).map((r) => (
                         <Card key={r.id || r.name} className="p-5 flex flex-col justify-between">
                             <div>
                                 <div className="flex items-center justify-between mb-2">
@@ -244,7 +245,7 @@ export default function AdministratorsPage() {
                             className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-500 min-w-60"
                         >
                             <option value="">-- Select Member / Staff --</option>
-                            {members.map((m) => (
+                            {(Array.isArray(members) ? members : []).map((m) => (
                                 <option key={m.id} value={m.id}>
                                     {m.name} ({m.email})
                                 </option>
@@ -271,7 +272,7 @@ export default function AdministratorsPage() {
                                 Assign System Roles
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {roles.map((r) => {
+                                {(Array.isArray(roles) ? roles : []).map((r) => {
                                     const isAssigned = selectedUserRoles.includes(r.name);
                                     return (
                                         <div
@@ -315,7 +316,7 @@ export default function AdministratorsPage() {
                                 Direct Granular Permissions
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                                {permissions.map((p) => {
+                                {(Array.isArray(permissions) ? permissions : []).map((p) => {
                                     const isGranted = selectedUserPermissions.includes(p.name);
                                     return (
                                         <label
@@ -387,7 +388,7 @@ export default function AdministratorsPage() {
                             Bind Default Permissions
                         </label>
                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-slate-200 rounded-xl bg-slate-50 text-xs">
-                            {permissions.map((p) => (
+                            {(Array.isArray(permissions) ? permissions : []).map((p) => (
                                 <label key={p.name} className="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
                                     <input
                                         type="checkbox"

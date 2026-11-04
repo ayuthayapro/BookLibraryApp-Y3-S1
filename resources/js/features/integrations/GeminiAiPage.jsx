@@ -19,6 +19,7 @@ import Badge from '../../components/common/Badge';
 import { integrationsService } from '../../services/integrationsService';
 import { booksService } from '../../services/booksService';
 import { useToast } from '../../app/ToastContext';
+import { toSafeArray } from '../../lib/utils';
 
 export default function GeminiAiPage({ initialBookForSummary = null }) {
     const { showToast } = useToast();
@@ -50,7 +51,7 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
     // Load books for summarizer
     useEffect(() => {
         booksService.getBooks({ per_page: 50 }).then((res) => {
-            setBooksList(res.data || []);
+            setBooksList(toSafeArray(res));
         }).catch(() => {});
     }, []);
 
@@ -74,11 +75,11 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
 
         try {
             const res = await integrationsService.geminiChat(msg, messages);
-            const aiReply = res.reply || res.data?.reply || res.message || 'I processed your request.';
+            const aiReply = res.data?.reply || res.reply || res.message || 'I processed your request.';
             setMessages([...newHistory, { role: 'assistant', content: aiReply }]);
         } catch (err) {
             showToast(err.message || 'Gemini AI chat failed', 'error');
-            setMessages([...newHistory, { role: 'assistant', content: 'Sorry, I encountered an error communicating with Gemini AI. Please check your API key configuration.' }]);
+            setMessages([...newHistory, { role: 'assistant', content: 'Sorry, I encountered an error communicating with Gemini AI. Please try again.' }]);
         } finally {
             setChatLoading(false);
         }
@@ -92,7 +93,8 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
         try {
             setRecLoading(true);
             const res = await integrationsService.geminiRecommendations(prefInput.trim());
-            setRecommendations(res.recommendations || res.data?.recommendations || res);
+            const recs = res.data?.recommendations || res.recommendations || res.data || res;
+            setRecommendations(recs);
         } catch (err) {
             showToast(err.message || 'Failed to generate recommendations', 'error');
         } finally {
@@ -107,7 +109,8 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
         try {
             setSummaryLoading(true);
             const res = await integrationsService.geminiSummarize(selectedBookId);
-            setSummaryResult(res.summary || res.data?.summary || res);
+            const summary = res.data?.summary || res.summary || res.data || res;
+            setSummaryResult(summary);
         } catch (err) {
             showToast(err.message || 'Failed to summarize book', 'error');
         } finally {
@@ -275,11 +278,26 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
                                 <Bookmark className="w-5 h-5 text-purple-600" />
                                 Recommended Titles from Gemini AI
                             </h3>
-                            <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap leading-relaxed">
-                                {typeof recommendations === 'string'
-                                    ? recommendations
-                                    : JSON.stringify(recommendations, null, 2)}
-                            </div>
+                            {Array.isArray(recommendations) ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {recommendations.map((rec, idx) => (
+                                        <div key={idx} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100 space-y-1">
+                                            <span className="text-[10px] uppercase font-bold text-purple-600 tracking-wider">
+                                                {rec.genre || 'Recommended'}
+                                            </span>
+                                            <h4 className="font-extrabold text-slate-900 text-sm">{rec.title}</h4>
+                                            <p className="text-xs text-slate-600">by {rec.author}</p>
+                                            <p className="text-xs text-slate-500 mt-2 italic">"{rec.reason}"</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap leading-relaxed">
+                                    {typeof recommendations === 'string'
+                                        ? recommendations
+                                        : JSON.stringify(recommendations, null, 2)}
+                                </div>
+                            )}
                         </Card>
                     )}
                 </div>
@@ -301,7 +319,7 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
                                         className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-purple-500"
                                     >
                                         <option value="">-- Choose Book from Library --</option>
-                                        {booksList.map((b) => (
+                                        {(Array.isArray(booksList) ? booksList : []).map((b) => (
                                             <option key={b.id} value={b.id}>
                                                 {b.title} (by {b.authors || 'Unknown'})
                                             </option>
@@ -327,11 +345,30 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
                                 <BookOpen className="w-5 h-5 text-purple-600" />
                                 Executive Synopsis & Takeaways
                             </h3>
-                            <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                {typeof summaryResult === 'string'
-                                    ? summaryResult
-                                    : JSON.stringify(summaryResult, null, 2)}
-                            </div>
+                            {typeof summaryResult === 'object' && summaryResult.synopsis ? (
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
+                                        <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block mb-1">Synopsis</span>
+                                        <p className="text-sm text-slate-800 leading-relaxed">{summaryResult.synopsis}</p>
+                                    </div>
+                                    {summaryResult.key_themes && (
+                                        <div>
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Key Themes</span>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {(Array.isArray(summaryResult.key_themes) ? summaryResult.key_themes : []).map((t, i) => (
+                                                    <Badge key={i} variant="purple" size="xs">{t}</Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    {typeof summaryResult === 'string'
+                                        ? summaryResult
+                                        : JSON.stringify(summaryResult, null, 2)}
+                                </div>
+                            )}
                         </Card>
                     )}
                 </div>
@@ -339,4 +376,3 @@ export default function GeminiAiPage({ initialBookForSummary = null }) {
         </div>
     );
 }
-

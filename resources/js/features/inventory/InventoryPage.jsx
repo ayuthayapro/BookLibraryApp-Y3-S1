@@ -25,7 +25,7 @@ import Table from '../../components/common/Table';
 import { copiesService } from '../../services/copiesService';
 import { booksService } from '../../services/booksService';
 import { useToast } from '../../app/ToastContext';
-import { formatDate } from '../../lib/utils';
+import { formatDate, toSafeArray, extractPagination } from '../../lib/utils';
 
 export default function InventoryPage({ onNavigateToScanner }) {
     const { showToast } = useToast();
@@ -82,12 +82,8 @@ export default function InventoryPage({ onNavigateToScanner }) {
             if (conditionFilter) params.condition = conditionFilter;
 
             const res = await copiesService.getCopies(params);
-            setCopies(res.data || []);
-            setPagination({
-                current_page: res.current_page || 1,
-                last_page: res.last_page || 1,
-                total: res.total || 0,
-            });
+            setCopies(toSafeArray(res));
+            setPagination(extractPagination(res));
         } catch (err) {
             showToast(err.message || 'Failed to load inventory copies', 'error');
         } finally {
@@ -99,7 +95,7 @@ export default function InventoryPage({ onNavigateToScanner }) {
     const fetchBooksList = async () => {
         try {
             const res = await booksService.getBooks({ per_page: 100 });
-            setBooksList(res.data || []);
+            setBooksList(toSafeArray(res));
         } catch (err) {
             console.error('Failed to load books for dropdown', err);
         }
@@ -525,7 +521,7 @@ export default function InventoryPage({ onNavigateToScanner }) {
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">-- Choose Book Title --</option>
-                            {booksList.map((b) => (
+                            {(booksList || []).map((b) => (
                                 <option key={b.id} value={b.id}>
                                     {b.title} ({b.isbn || 'No ISBN'})
                                 </option>
@@ -587,7 +583,7 @@ export default function InventoryPage({ onNavigateToScanner }) {
                             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">-- Choose Book Title --</option>
-                            {booksList.map((b) => (
+                            {(booksList || []).map((b) => (
                                 <option key={b.id} value={b.id}>
                                     {b.title} ({b.isbn || 'No ISBN'})
                                 </option>

@@ -14,6 +14,7 @@ import AdministratorsPage from '../features/administrators/AdministratorsPage';
 import ReportsPage from '../features/reports/ReportsPage';
 import GoogleBooksPage from '../features/integrations/GoogleBooksPage';
 import GeminiAiPage from '../features/integrations/GeminiAiPage';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import { loansService } from '../services/loansService';
 
 export default function AppRoutes() {
@@ -174,7 +175,9 @@ export default function AppRoutes() {
             onQuickScanBarcode={handleQuickScanBarcode}
             overdueCount={overdueCount}
         >
-            {renderActiveContent()}
+            <ErrorBoundary key={activeTab}>
+                {renderActiveContent()}
+            </ErrorBoundary>
         </AdminLayout>
     );
 }

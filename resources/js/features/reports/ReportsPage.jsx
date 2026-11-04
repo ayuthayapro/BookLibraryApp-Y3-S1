@@ -21,7 +21,7 @@ import { copiesService } from '../../services/copiesService';
 import { loansService } from '../../services/loansService';
 import { booksService } from '../../services/booksService';
 import { useToast } from '../../app/ToastContext';
-import { formatDate } from '../../lib/utils';
+import { formatDate, toSafeArray } from '../../lib/utils';
 
 export default function ReportsPage() {
     const { showToast } = useToast();
@@ -41,8 +41,8 @@ export default function ReportsPage() {
                 dashboardService.getPopularBooks(),
             ]);
 
-            setStats(statsRes);
-            setPopularBooks(popularRes.popular_books || []);
+            setStats(statsRes.data || statsRes);
+            setPopularBooks(toSafeArray(popularRes, 'popular_books'));
         } catch (err) {
             showToast('Failed to load library analytics data', 'error');
         } finally {
@@ -66,7 +66,7 @@ export default function ReportsPage() {
         try {
             setExportingInventory(true);
             const res = await booksService.getBooks({ per_page: 200 });
-            const books = res.data || [];
+            const books = toSafeArray(res);
 
             const headers = ['ID', 'Title', 'ISBN', 'Category', 'Published Year', 'Total Copies', 'Available Copies'];
             const rows = books.map((b) => [
@@ -105,7 +105,7 @@ export default function ReportsPage() {
         try {
             setExportingLoans(true);
             const res = await loansService.getLoans({ per_page: 200 });
-            const loans = res.data || [];
+            const loans = toSafeArray(res);
 
             const headers = ['Loan ID', 'Borrower Name', 'Borrower Email', 'Book Title', 'Barcode', 'Borrowed Date', 'Due Date', 'Returned Date', 'Status'];
             const rows = loans.map((l) => [

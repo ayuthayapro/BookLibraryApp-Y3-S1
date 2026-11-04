@@ -25,7 +25,7 @@ import { membersService } from '../../services/membersService';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../app/AuthContext';
 import { useToast } from '../../app/ToastContext';
-import { formatDate } from '../../lib/utils';
+import { formatDate, toSafeArray, extractPagination } from '../../lib/utils';
 
 export default function MembersPage() {
     const { user: currentUser } = useAuth();
@@ -74,12 +74,8 @@ export default function MembersPage() {
             if (statusFilter) params.status = statusFilter;
 
             const res = await membersService.getMembers(params);
-            setMembers(res.data || []);
-            setPagination({
-                current_page: res.current_page || 1,
-                last_page: res.last_page || 1,
-                total: res.total || 0,
-            });
+            setMembers(toSafeArray(res));
+            setPagination(extractPagination(res));
         } catch (err) {
             showToast(err.message || 'Failed to fetch members list', 'error');
         } finally {
