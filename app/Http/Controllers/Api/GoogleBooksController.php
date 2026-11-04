@@ -82,4 +82,3 @@ class GoogleBooksController extends Controller
         }
     }
 }
-

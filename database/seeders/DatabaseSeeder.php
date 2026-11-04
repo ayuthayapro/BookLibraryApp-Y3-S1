@@ -20,12 +20,23 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
         ]);
 
-        $testUser = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'status' => 'active',
-        ]);
+        $testUser = User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test Super Admin', 'status' => 'active', 'password' => 'password']
+        );
         $testUser->assignRole(RoleName::Admin);
+
+        $librarianUser = User::firstOrCreate(
+            ['email' => 'librarian@example.com'],
+            ['name' => 'Librarian Staff', 'status' => 'active', 'password' => 'password']
+        );
+        $librarianUser->assignRole(RoleName::Librarian);
+
+        $studentUser = User::firstOrCreate(
+            ['email' => 'student@example.com'],
+            ['name' => 'Student Member', 'status' => 'active', 'password' => 'password']
+        );
+        $studentUser->assignRole(RoleName::Member);
 
         $this->call([
             CategorySeeder::class,

@@ -167,4 +167,3 @@ class DashboardApiTest extends TestCase
         $response->assertStatus(401);
     }
 }
-

@@ -181,4 +181,3 @@ class GeminiAiApiTest extends TestCase
             ->assertJsonValidationErrors(['message']);
     }
 }
-

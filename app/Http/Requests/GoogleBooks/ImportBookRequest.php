@@ -30,4 +30,3 @@ class ImportBookRequest extends FormRequest
         ];
     }
 }
-
