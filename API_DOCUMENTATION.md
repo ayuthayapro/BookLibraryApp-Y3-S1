@@ -17,6 +17,8 @@
 8. [Gemini AI Integration](#8-gemini-ai-integration)
 9. [Dashboard Statistics & Circulation Charts](#9-dashboard-statistics--circulation-charts)
 10. [Standard HTTP Status Codes & Error Responses](#10-standard-http-status-codes--error-responses)
+11. [cURL Quick Reference for Core Workflows](#11-curl-quick-reference-for-core-workflows)
+12. [Postman / API Client Setup](#12-postman--api-client-setup)
 
 ---
 
@@ -420,4 +422,115 @@ erDiagram
 | `409 Conflict` | Conflict with state | Deleting copies or users with active loans |
 | `422 Unprocessable` | Validation error | Missing required fields, unique constraint clashes |
 | `500 Server Error` | External service error | External Google/Gemini API failure |
+
+---
+
+## 11. cURL Quick Reference for Core Workflows
+
+### 1. Register & Login
+```bash
+# Register
+curl -X POST http://localhost:8000/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"name": "Alice Reader", "email": "alice@example.com", "password": "Password123!", "password_confirmation": "Password123!"}'
+
+# Login
+curl -X POST http://localhost:8000/api/v1/login \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"email": "alice@example.com", "password": "Password123!"}'
+```
+
+### 2. Add Book & Copies
+```bash
+# Create Book
+curl -X POST http://localhost:8000/api/v1/books \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"title": "Clean Architecture", "category_id": 1, "authors": "Robert C. Martin", "isbn": "9780134494166"}'
+
+# Add 3 Physical Copies with Auto-Generated Barcodes
+curl -X POST http://localhost:8000/api/v1/books/1/copies \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"count": 3, "condition": "new"}'
+
+# Scan by Barcode
+curl -X GET http://localhost:8000/api/v1/book-copies/barcode/LIB-A1B2C3D4 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Accept: application/json"
+```
+
+### 3. Borrowing & Returning
+```bash
+# Borrow Copy
+curl -X POST http://localhost:8000/api/v1/loans \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"book_copy_id": 1, "user_id": 1}'
+
+# Return Copy
+curl -X POST http://localhost:8000/api/v1/loans/1/return \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"returned_at": "2026-11-04"}'
+```
+
+### 4. Google Books & Gemini AI
+```bash
+# Search Google Books
+curl -X GET "http://localhost:8000/api/v1/google-books/search?q=Domain-Driven+Design" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Accept: application/json"
+
+# Import Google Volume to Catalog
+curl -X POST http://localhost:8000/api/v1/google-books/import \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"google_book_id": "s1gVAAAAYAAJ", "copies_count": 2}'
+
+# Ask Gemini AI Librarian
+curl -X POST http://localhost:8000/api/v1/ai/chat \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"message": "Can you recommend a good beginner book on database architecture?"}'
+```
+
+### 5. Dashboard KPIs
+```bash
+curl -X GET http://localhost:8000/api/v1/dashboard/stats \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Accept: application/json"
+```
+
+---
+
+## 12. Postman / API Client Setup
+
+1. **Base URL**: Set environment variable `baseUrl` to `http://localhost:8000/api/v1`.
+2. **Bearer Token Authentication**:
+   - In Postman, select your Collection or Folder root.
+   - Go to the **Authorization** tab.
+   - Select Type: **Bearer Token**.
+   - Set Token to `{{accessToken}}`.
+   - In the **Login** request Tests script, store the token automatically:
+     ```javascript
+     const jsonData = pm.response.json();
+     if (jsonData.access_token) {
+         pm.environment.set("accessToken", jsonData.access_token);
+     }
+     ```
+3. **Headers Required on All Requests**:
+   ```
+   Accept: application/json
+   Content-Type: application/json
+   ```
+
 

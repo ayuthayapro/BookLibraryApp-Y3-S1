@@ -1,58 +1,245 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📚 Book Library Management System (BookLibraryApp-Y3-S1)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A full-featured, enterprise-grade RESTful Library Management API built with **Laravel 13**, **PHP 8.5**, **PostgreSQL/MySQL**, and **Laravel Sanctum**. Incorporates barcode inventory operations, circulation rules, Google Books API synchronization, Google Gemini AI assistant, and comprehensive analytics.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Key Highlights & Milestone Matrix
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Milestone | Scope & Capabilities | Status |
+| :--- | :--- | :---: |
+| **Milestone 1** | **Database Architecture & Models**: Schema migrations, Entity-Relationship Diagram (ERD), Eloquent relationships (`hasMany`, `belongsTo`, `hasManyThrough`, `belongsToMany`), factories, and seeders. | ✅ Completed |
+| **Milestone 2** | **Auth, Catalog & RBAC**: Sanctum Bearer token authentication, Books & Categories CRUD (explicit routes by ID), Role-Based Access Control (`admin`, `librarian`, `member`), permission gates, and strict FormRequest validation. | ✅ Completed |
+| **Milestone 3** | **Circulation & Inventory**: User management, physical copy tracking (`BookCopy`), auto-generating unique barcodes (`LIB-XXXXXXXX`), barcode scanning & CODE128 printable label payloads, inventory stock reports, borrowing/returns, and automated overdue tracking. | ✅ Completed |
+| **Milestone 4** | **Integrations, AI & Analytics**: Google Books API integration (volume search, metadata sync & 1-click catalog import), Gemini AI integration (personalized book recommendations, synopsis summarizer & library chatbot assistant), dashboard KPIs, and circulation trends. | ✅ Completed |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Test Suite Coverage**: **116 Tests / 650 Assertions** passing with 100% success rate.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🛠️ Tech Stack & Requirements
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **PHP**: `^8.3` (Developed & tested on `PHP 8.5.12`)
+- **Framework**: `Laravel 13.x`
+- **Authentication**: `Laravel Sanctum 4.x` (Bearer Token)
+- **Database**: PostgreSQL (production/local), SQLite in-memory (testing)
+- **Integrations**:
+  - Google Books API v1
+  - Google Gemini API (`gemini-1.5-flash`)
+- **Code Standards**: PSR-12 formatted with **Laravel Pint**
+- **Test Runner**: PHPUnit 12.x
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## 📐 Database Entity Relationship Diagram (ERD)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+```mermaid
+erDiagram
+    USERS ||--o{ LOANS : "borrows"
+    USERS ||--o{ FAVORITES : "favorites"
+    USERS ||--o{ PERSONAL_ACCESS_TOKENS : "tokens"
+    CATEGORIES ||--o{ BOOKS : "classifies"
+    BOOKS ||--o{ BOOK_COPIES : "physical copies"
+    BOOKS ||--o{ FAVORITES : "favorited"
+    BOOK_COPIES ||--o{ LOANS : "circulated via"
 
-```bash
-composer require laravel/boost --dev
+    USERS {
+        int id PK
+        string name
+        string email
+        string password
+        string status "active|banned"
+        timestamps created_at
+    }
 
-php artisan boost:install
+    CATEGORIES {
+        int id PK
+        string name
+        timestamps created_at
+    }
+
+    BOOKS {
+        int id PK
+        int category_id FK
+        string google_book_id "nullable"
+        string title
+        text description
+        string authors
+        string isbn "nullable"
+        timestamps created_at
+    }
+
+    BOOK_COPIES {
+        int id PK
+        int book_id FK
+        string barcode UK
+        string condition "new|good|fair|damaged"
+        timestamps created_at
+    }
+
+    LOANS {
+        int id PK
+        int user_id FK
+        int book_copy_id FK
+        int issued_by FK
+        date borrowed_at
+        date due_at
+        date returned_at "nullable"
+        string status "borrowed|returned|overdue"
+        timestamps created_at
+    }
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## ⚙️ Quick Start Installation
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/your-username/BookLibraryApp-Y3-S1.git
+cd BookLibraryApp-Y3-S1
+composer install
+```
 
-## Code of Conduct
+### 2. Configure Environment
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Configure your database connection in `.env`:
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=book_library
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
 
-## Security Vulnerabilities
+# Optional: Add external API keys for Milestone 4 features
+GOOGLE_BOOKS_API_KEY=
+GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3. Run Migrations and Seeders
+```bash
+php artisan migrate --seed
+```
 
-## License
+### 4. Start Local Development Server
+```bash
+php artisan serve
+```
+The API is accessible at: `http://localhost:8000/api/v1`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 🧪 Running Automated Tests
+
+Run the complete test suite (116 tests, 650 assertions):
+```bash
+vendor/bin/phpunit --testdox
+```
+
+Run test suite for a specific feature:
+```bash
+vendor/bin/phpunit --filter=BookCopyApiTest
+vendor/bin/phpunit --filter=GoogleBooksApiTest
+vendor/bin/phpunit --filter=GeminiAiApiTest
+vendor/bin/phpunit --filter=DashboardApiTest
+```
+
+Format code according to Laravel standards:
+```bash
+vendor/bin/pint --format agent
+```
+
+---
+
+## 📖 API Documentation Reference
+
+For the comprehensive endpoint catalog, sample JSON requests, and cURL commands, see:
+👉 [**API_DOCUMENTATION.md**](./API_DOCUMENTATION.md)
+
+### Core Route Summary (`/api/v1`)
+
+```
+Authentication:
+  POST   /api/v1/register
+  POST   /api/v1/login
+  POST   /api/v1/logout
+  GET    /api/v1/me
+
+Catalog & Categories:
+  GET    /api/v1/categories
+  POST   /api/v1/categories
+  GET    /api/v1/categories/{id}
+  PUT    /api/v1/categories/{id}
+  DELETE /api/v1/categories/{id}
+  GET    /api/v1/books
+  POST   /api/v1/books
+  GET    /api/v1/books/{id}
+  PUT    /api/v1/books/{id}
+  DELETE /api/v1/books/{id}
+
+Copies & Inventory:
+  GET    /api/v1/book-copies
+  POST   /api/v1/book-copies
+  POST   /api/v1/book-copies/bulk
+  GET    /api/v1/book-copies/barcode/{barcode}
+  GET    /api/v1/book-copies/{id}
+  GET    /api/v1/book-copies/{id}/barcode
+  PUT    /api/v1/book-copies/{id}
+  DELETE /api/v1/book-copies/{id}
+  POST   /api/v1/books/{id}/copies
+  GET    /api/v1/inventory
+  GET    /api/v1/inventory/summary
+  GET    /api/v1/books/{id}/inventory
+
+Circulation & Loans:
+  GET    /api/v1/loans
+  POST   /api/v1/loans (or /borrow)
+  GET    /api/v1/loans/overdue
+  GET    /api/v1/loans/my-loans
+  GET    /api/v1/loans/{id}
+  POST   /api/v1/loans/{id}/return (or /return/{id})
+  DELETE /api/v1/loans/{id}
+
+Google Books Integration:
+  GET    /api/v1/google-books/search
+  GET    /api/v1/google-books/{googleBookId}
+  POST   /api/v1/google-books/import
+
+Gemini AI Integration:
+  POST   /api/v1/ai/recommendations
+  POST   /api/v1/ai/summarize/{id}
+  POST   /api/v1/ai/chat
+
+Dashboard Analytics:
+  GET    /api/v1/dashboard/stats
+  GET    /api/v1/dashboard/popular-books
+  GET    /api/v1/dashboard/recent-activities
+  GET    /api/v1/dashboard/charts
+
+Role & Permission Admin:
+  GET    /api/v1/roles
+  POST   /api/v1/roles
+  GET    /api/v1/permissions
+  POST   /api/v1/users/{id}/roles
+  POST   /api/v1/users/{id}/permissions
+```
+
+---
+
+## 🔒 Security & Access Control
+
+- **Token Authentication**: Secured using Sanctum Bearer tokens.
+- **Route Validation**: Strict parameter filtering and `{id}` integer constraints prevent SQL injection and route collisions.
+- **State Guarding**: Copies and users with active borrowings cannot be deleted, returning `400 Bad Request` or `409 Conflict`.
+- **Role Enforcement**: Administrative features (role assignment, permission grants) are restricted to the `admin` role via middleware.
+
+---
+
+## 📄 License
+This project is open-sourced software licensed under the [MIT License](LICENSE).
