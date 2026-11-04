@@ -24,11 +24,15 @@ class UpdateBookCopyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'book_id' => 'sometimes|required|exists:books,id',
-            'barcode'=> ['sometimes','required', 'string', 'max:255',
+            'book_id' => 'sometimes|required|integer|exists:books,id',
+            'barcode' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
                 Rule::unique('book_copies', 'barcode')->ignore($this->route('id')),
             ],
-            'condition' => 'nullable|string|max:255',
+            'condition' => 'sometimes|nullable|string|max:255',
         ];
     }
 }

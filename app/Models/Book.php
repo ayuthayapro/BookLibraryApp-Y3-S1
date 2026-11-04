@@ -49,6 +49,30 @@ class Book extends Model
     }
 
     /**
+     * Get the available copies of the book (not currently on loan).
+     *
+     * @return HasMany<BookCopy, $this>
+     */
+    public function availableCopies(): HasMany
+    {
+        return $this->bookCopies()->whereDoesntHave('loans', function ($q) {
+            $q->whereNull('returned_at');
+        });
+    }
+
+    /**
+     * Get the copies of the book currently on loan.
+     *
+     * @return HasMany<BookCopy, $this>
+     */
+    public function borrowedCopies(): HasMany
+    {
+        return $this->bookCopies()->whereHas('loans', function ($q) {
+            $q->whereNull('returned_at');
+        });
+    }
+
+    /**
      * Get the favorites records for this book.
      *
      * @return HasMany<Favorite, $this>

@@ -253,4 +253,3 @@ class LoanController extends Controller
         return response()->noContent();
     }
 }
-

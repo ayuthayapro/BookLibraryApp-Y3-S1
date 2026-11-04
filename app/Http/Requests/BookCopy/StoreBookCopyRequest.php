@@ -23,8 +23,8 @@ class StoreBookCopyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'book_id'   => 'required|exists:books,id',
-            'barcode'   => 'nullable|string|max:255|unique:book_copies,barcode',
+            'book_id' => 'required|integer|exists:books,id',
+            'barcode' => 'nullable|string|max:255|unique:book_copies,barcode',
             'condition' => 'nullable|string|max:255',
         ];
     }
